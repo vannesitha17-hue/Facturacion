@@ -5,6 +5,7 @@ using Facturacion.ApiService.Services;
 using Facturacion.ApiService.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Facturacion.ApiService.Constants;
 using Xunit;
 
 namespace Facturacion.Tests.Services
@@ -45,7 +46,7 @@ namespace Facturacion.Tests.Services
         [Fact]
         public async Task ProcesarRecordatorios_PrimerRecordatorio_CambiaASegundoRecordatorio()
         {
-            var factura = CrearFactura("primerrecordatorio");
+            var factura = CrearFactura(EstadosFactura.PrimerRecordatorio);
 
             _repositorioMock
                 .Setup(r => r.ObtenerPendientesRecordatorioAsync())
@@ -69,13 +70,13 @@ namespace Facturacion.Tests.Services
 
             _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
                 factura.Id!,
-                "segundorecordatorio"), Times.Once);
+                EstadosFactura.SegundoRecordatorio), Times.Once);
         }
 
         [Fact]
         public async Task ProcesarRecordatorios_SegundoRecordatorio_CambiaADesactivado()
         {
-            var factura = CrearFactura("segundorecordatorio");
+            var factura = CrearFactura(EstadosFactura.SegundoRecordatorio);
 
             _repositorioMock
                 .Setup(r => r.ObtenerPendientesRecordatorioAsync())
@@ -94,13 +95,13 @@ namespace Facturacion.Tests.Services
 
             _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
                 factura.Id!,
-                "desactivado"), Times.Once);
+                EstadosFactura.Desactivado), Times.Once);
         }
 
         [Fact]
         public async Task ProcesarRecordatorios_FacturaPagada_NoCambiaEstadoNiEnviaCorreo()
         {
-            var factura = CrearFactura("pagada");
+            var factura = CrearFactura(EstadosFactura.Pagada);
 
             _repositorioMock
                 .Setup(r => r.ObtenerPendientesRecordatorioAsync())
@@ -123,7 +124,7 @@ namespace Facturacion.Tests.Services
         [Fact]
         public async Task ProcesarRecordatorios_SiFallaCorreo_NoActualizaEstado()
         {
-            var factura = CrearFactura("primerrecordatorio");
+            var factura = CrearFactura(EstadosFactura.PrimerRecordatorio);
 
             _repositorioMock
                 .Setup(r => r.ObtenerPendientesRecordatorioAsync())
@@ -149,7 +150,7 @@ namespace Facturacion.Tests.Services
         public async Task ProcesarRecordatorios_SiFallaActualizacion_NoCuentaFacturaComoProcesada()
         {
             // Arrange
-            var factura = CrearFactura("primerrecordatorio");
+            var factura = CrearFactura(EstadosFactura.PrimerRecordatorio);
 
             _repositorioMock
                 .Setup(r => r.ObtenerPendientesRecordatorioAsync())
@@ -165,7 +166,7 @@ namespace Facturacion.Tests.Services
             _repositorioMock
                 .Setup(r => r.ActualizarEstadoAsync(
                     factura.Id!,
-                    "segundorecordatorio"))
+                    EstadosFactura.SegundoRecordatorio))
                 .ThrowsAsync(new InvalidOperationException(
                     "Error simulado al actualizar MongoDB"));
 
@@ -182,7 +183,7 @@ namespace Facturacion.Tests.Services
 
             _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
                 factura.Id!,
-                "segundorecordatorio"), Times.Once);
+                EstadosFactura.SegundoRecordatorio), Times.Once);
         }
     }
 }
