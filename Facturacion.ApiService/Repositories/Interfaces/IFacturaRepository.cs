@@ -9,6 +9,8 @@ namespace Facturacion.ApiService.Repositories.Interfaces
 
         Task<List<Factura>> ObtenerPorEstadoAsync(string estado);
 
+        Task<List<Factura>> ObtenerPendientesRecordatorioAsync();
+
         Task ActualizarEstadoAsync(string id, string nuevoEstado);
     }
 }

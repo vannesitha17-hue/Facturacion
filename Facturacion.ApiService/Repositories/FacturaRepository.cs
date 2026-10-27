@@ -1,7 +1,8 @@
 ﻿
+using Facturacion.ApiService.Constants;
 using Facturacion.ApiService.Models;
-using MongoDB.Driver;
 using Facturacion.ApiService.Repositories.Interfaces;
+using MongoDB.Driver;
 
 namespace Facturacion.ApiService.Repositories
 {
@@ -27,7 +28,19 @@ namespace Facturacion.ApiService.Repositories
                 .Find(f => f.Estado == estado)
                 .ToListAsync();
         }
+        
+        public async Task<List<Factura>> ObtenerPendientesRecordatorioAsync()
+        {
+            var estadosPendientes = new[]
+            {
+                EstadosFactura.PrimerRecordatorio,
+                EstadosFactura.SegundoRecordatorio
+            };
 
+            return await _facturas
+                .Find(f => estadosPendientes.Contains(f.Estado))
+                .ToListAsync();
+        }
         public async Task ActualizarEstadoAsync(string id, string nuevoEstado)
         {
             var filtro = Builders<Factura>.Filter.Eq(f => f.Id, id);
@@ -35,7 +48,16 @@ namespace Facturacion.ApiService.Repositories
             var actualizacion = Builders<Factura>.Update
                 .Set(f => f.Estado, nuevoEstado);
 
-            await _facturas.UpdateOneAsync(filtro, actualizacion);
+            var resultado = await _facturas.UpdateOneAsync(
+                filtro,
+                actualizacion);
+
+            if (resultado.MatchedCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No se encontró la factura con ID {id}.");
+            }
         }
+
     }
 }

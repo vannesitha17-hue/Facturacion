@@ -48,7 +48,7 @@ namespace Facturacion.Tests.Services
             var factura = CrearFactura("primerrecordatorio");
 
             _repositorioMock
-                .Setup(r => r.ObtenerTodasAsync())
+                .Setup(r => r.ObtenerPendientesRecordatorioAsync())
                 .ReturnsAsync(new List<Factura> { factura });
 
             _emailMock
@@ -78,7 +78,7 @@ namespace Facturacion.Tests.Services
             var factura = CrearFactura("segundorecordatorio");
 
             _repositorioMock
-                .Setup(r => r.ObtenerTodasAsync())
+                .Setup(r => r.ObtenerPendientesRecordatorioAsync())
                 .ReturnsAsync(new List<Factura> { factura });
 
             _emailMock
@@ -103,8 +103,8 @@ namespace Facturacion.Tests.Services
             var factura = CrearFactura("pagada");
 
             _repositorioMock
-                .Setup(r => r.ObtenerTodasAsync())
-                .ReturnsAsync(new List<Factura> { factura });
+                .Setup(r => r.ObtenerPendientesRecordatorioAsync())
+                .ReturnsAsync(new List<Factura> ());
 
             var resultado = await _servicio.ProcesarRecordatoriosAsync();
 
@@ -126,7 +126,7 @@ namespace Facturacion.Tests.Services
             var factura = CrearFactura("primerrecordatorio");
 
             _repositorioMock
-                .Setup(r => r.ObtenerTodasAsync())
+                .Setup(r => r.ObtenerPendientesRecordatorioAsync())
                 .ReturnsAsync(new List<Factura> { factura });
 
             _emailMock
@@ -143,6 +143,46 @@ namespace Facturacion.Tests.Services
             _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcesarRecordatorios_SiFallaActualizacion_NoCuentaFacturaComoProcesada()
+        {
+            // Arrange
+            var factura = CrearFactura("primerrecordatorio");
+
+            _repositorioMock
+                .Setup(r => r.ObtenerPendientesRecordatorioAsync())
+                .ReturnsAsync(new List<Factura> { factura });
+
+            _emailMock
+                .Setup(e => e.EnviarCorreoAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            _repositorioMock
+                .Setup(r => r.ActualizarEstadoAsync(
+                    factura.Id!,
+                    "segundorecordatorio"))
+                .ThrowsAsync(new InvalidOperationException(
+                    "Error simulado al actualizar MongoDB"));
+
+            // Act
+            var resultado = await _servicio.ProcesarRecordatoriosAsync();
+
+            // Assert
+            Assert.Equal(0, resultado);
+
+            _emailMock.Verify(e => e.EnviarCorreoAsync(
+                factura.Correo,
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Once);
+
+            _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
+                factura.Id!,
+                "segundorecordatorio"), Times.Once);
         }
     }
 }

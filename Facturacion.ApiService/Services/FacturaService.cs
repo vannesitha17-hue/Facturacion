@@ -1,6 +1,7 @@
 ﻿using Facturacion.ApiService.Repositories;
 using Facturacion.ApiService.Services.Interfaces;
 using Facturacion.ApiService.Repositories.Interfaces;
+using Facturacion.ApiService.Constants;
 
 namespace Facturacion.ApiService.Services
 {
@@ -22,13 +23,7 @@ namespace Facturacion.ApiService.Services
 
         public async Task<int> ProcesarRecordatoriosAsync()
         {
-            var facturas = await _facturaRepository.ObtenerTodasAsync();
-
-            var facturasPendientes = facturas
-                .Where(f =>
-                    f.Estado == "primerrecordatorio" ||
-                    f.Estado == "segundorecordatorio")
-                .ToList();
+            var facturasPendientes = await _facturaRepository.ObtenerPendientesRecordatorioAsync();
 
             int procesadas = 0;
 
@@ -40,9 +35,9 @@ namespace Facturacion.ApiService.Services
                     string asunto;
                     string mensaje;
 
-                    if (factura.Estado == "primerrecordatorio")
+                    if (factura.Estado == EstadosFactura.PrimerRecordatorio)
                     {
-                        nuevoEstado = "segundorecordatorio";
+                        nuevoEstado = EstadosFactura.SegundoRecordatorio;
                         asunto = $"Segundo recordatorio - Factura {factura.NumeroFactura}";
                         mensaje = $"Estimado/a {factura.Cliente}, " +
                                   $"le recordamos que la factura {factura.NumeroFactura} " +
@@ -50,7 +45,7 @@ namespace Facturacion.ApiService.Services
                     }
                     else
                     {
-                        nuevoEstado = "desactivado";
+                        nuevoEstado = EstadosFactura.Desactivado;
                         asunto = $"Aviso de desactivación - Factura {factura.NumeroFactura}";
                         mensaje = $"Estimado/a {factura.Cliente}, " +
                                   $"le informamos que la factura {factura.NumeroFactura} " +
@@ -75,12 +70,13 @@ namespace Facturacion.ApiService.Services
                         factura.Id,
                         nuevoEstado);
 
-                    procesadas++;
-
                     _logger.LogInformation(
                         "Factura {NumeroFactura} procesada. Nuevo estado: {Estado}",
                         factura.NumeroFactura,
                         nuevoEstado);
+
+                    procesadas++;
+
                 }
                 catch (Exception ex)
                 {
