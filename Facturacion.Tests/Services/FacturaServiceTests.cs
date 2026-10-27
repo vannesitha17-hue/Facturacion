@@ -1,0 +1,148 @@
+﻿
+using Facturacion.ApiService.Models;
+using Facturacion.ApiService.Repositories.Interfaces;
+using Facturacion.ApiService.Services;
+using Facturacion.ApiService.Services.Interfaces;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace Facturacion.Tests.Services
+{
+    public class FacturaServiceTests
+    {
+        private readonly Mock<IFacturaRepository> _repositorioMock;
+        private readonly Mock<IEmailService> _emailMock;
+        private readonly Mock<ILogger<FacturaService>> _loggerMock;
+        private readonly FacturaService _servicio;
+
+        public FacturaServiceTests()
+        {
+            _repositorioMock = new Mock<IFacturaRepository>();
+            _emailMock = new Mock<IEmailService>();
+            _loggerMock = new Mock<ILogger<FacturaService>>();
+
+            _servicio = new FacturaService(
+                _repositorioMock.Object,
+                _emailMock.Object,
+                _loggerMock.Object);
+        }
+
+        private static Factura CrearFactura(string estado)
+        {
+            return new Factura
+            {
+                Id = "507f1f77bcf86cd799439011",
+                Cliente = "Cliente de prueba",
+                Correo = "prueba@example.com",
+                NumeroFactura = "FAC-001",
+                Valor = 150000,
+                FechaVencimiento = DateTime.Today,
+                Estado = estado
+            };
+        }
+
+        [Fact]
+        public async Task ProcesarRecordatorios_PrimerRecordatorio_CambiaASegundoRecordatorio()
+        {
+            var factura = CrearFactura("primerrecordatorio");
+
+            _repositorioMock
+                .Setup(r => r.ObtenerTodasAsync())
+                .ReturnsAsync(new List<Factura> { factura });
+
+            _emailMock
+                .Setup(e => e.EnviarCorreoAsync(
+                    factura.Correo,
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var resultado = await _servicio.ProcesarRecordatoriosAsync();
+
+            Assert.Equal(1, resultado);
+
+            _emailMock.Verify(e => e.EnviarCorreoAsync(
+                factura.Correo,
+                It.Is<string>(a => a.Contains("Segundo recordatorio")),
+                It.IsAny<string>()), Times.Once);
+
+            _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
+                factura.Id!,
+                "segundorecordatorio"), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcesarRecordatorios_SegundoRecordatorio_CambiaADesactivado()
+        {
+            var factura = CrearFactura("segundorecordatorio");
+
+            _repositorioMock
+                .Setup(r => r.ObtenerTodasAsync())
+                .ReturnsAsync(new List<Factura> { factura });
+
+            _emailMock
+                .Setup(e => e.EnviarCorreoAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var resultado = await _servicio.ProcesarRecordatoriosAsync();
+
+            Assert.Equal(1, resultado);
+
+            _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
+                factura.Id!,
+                "desactivado"), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcesarRecordatorios_FacturaPagada_NoCambiaEstadoNiEnviaCorreo()
+        {
+            var factura = CrearFactura("pagada");
+
+            _repositorioMock
+                .Setup(r => r.ObtenerTodasAsync())
+                .ReturnsAsync(new List<Factura> { factura });
+
+            var resultado = await _servicio.ProcesarRecordatoriosAsync();
+
+            Assert.Equal(0, resultado);
+
+            _emailMock.Verify(e => e.EnviarCorreoAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Never);
+
+            _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcesarRecordatorios_SiFallaCorreo_NoActualizaEstado()
+        {
+            var factura = CrearFactura("primerrecordatorio");
+
+            _repositorioMock
+                .Setup(r => r.ObtenerTodasAsync())
+                .ReturnsAsync(new List<Factura> { factura });
+
+            _emailMock
+                .Setup(e => e.EnviarCorreoAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception("Error simulado al enviar correo"));
+
+            var resultado = await _servicio.ProcesarRecordatoriosAsync();
+
+            Assert.Equal(0, resultado);
+
+            _repositorioMock.Verify(r => r.ActualizarEstadoAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Never);
+        }
+    }
+}

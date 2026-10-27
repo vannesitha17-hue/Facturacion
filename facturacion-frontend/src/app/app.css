@@ -1,0 +1,61 @@
+
+:host {
+  display: block;
+  font-family: Arial, sans-serif;
+  color: #263238;
+}
+
+.contenedor {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+h1 {
+  margin-bottom: 8px;
+  color: #17365d;
+}
+
+p {
+  color: #607080;
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th, td {
+  padding: 14px;
+  border-bottom: 1px solid #e0e5ea;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #17365d;
+  color: white;
+}
+
+tbody tr:hover {
+  background: #f3f7fb;
+}
+
+.estado {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: #e8eef7;
+  color: #17365d;
+  font-size: 13px;
+}
+
+.error {
+  color: #b42318;
+}

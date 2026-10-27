@@ -1,0 +1,50 @@
+
+<div class="contenedor">
+  <h1>{{ title() }}</h1>
+  <p>Consulta de facturas de clientes</p>
+
+  <button
+    type="button"
+    (click)="ejecutarProcesamiento()"
+    [disabled]="procesando">
+    {{ procesando ? 'Procesando...' : 'Procesar recordatorios' }}
+  </button>
+
+<p *ngIf="mensaje">{{ mensaje }}</p>
+
+  <p *ngIf="cargando">Cargando facturas...</p>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+
+  <div class="tabla-contenedor" *ngIf="!cargando && !error">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Cliente</th>
+          <th>Correo</th>
+          <th>Valor</th>
+          <th>Vencimiento</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let factura of facturas">
+          <td>{{ factura.numeroFactura }}</td>
+          <td>{{ factura.cliente }}</td>
+          <td>{{ factura.correo }}</td>
+          <td>{{ factura.valor | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+          <td>{{ factura.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="estado">{{ factura.estado }}</span>
+          </td>
+        </tr>
+
+        <tr *ngIf="facturas.length === 0">
+          <td colspan="6">No hay facturas registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

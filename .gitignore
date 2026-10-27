@@ -1,0 +1,30 @@
+# Archivos generados por .NET
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Dependencias y compilaci�n de Angular
+facturacion-frontend/node_modules/
+facturacion-frontend/dist/
+facturacion-frontend/.angular/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+**/secrets.json
+**/appsettings.Local.json
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Angular
+facturacion-frontend/node_modules/
+facturacion-frontend/.angular/
+facturacion-frontend/dist/
+
+# Archivos de respaldo
+*.bak
